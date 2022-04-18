@@ -22,6 +22,7 @@ const ConsumerSchema = new Schema({
   room_number: {
     type: Number,
     required: true,
+    unique: true,
   },
   room_type: {
     type: Number,

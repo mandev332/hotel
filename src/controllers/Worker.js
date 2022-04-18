@@ -1,5 +1,4 @@
 import { Worker } from "../models/index.js";
-import jwt from "jsonwebtoken";
 import sha256 from "sha256";
 import "./mongo.js";
 
@@ -7,30 +6,33 @@ import "./mongo.js";
 const GET = async (req, res) => {
   try {
     let worker;
-    const { token } = req.headers;
-    const { passportinfo, contact, gender } = req.body;
-    if (!token && !passportinfo && !contact && !gender)
-      worker = await Worker.find({ end: null });
-    else if (passportinfo || gender)
+    const { _id } = req.params;
+    const { passportinfo, contact, gender, end } = req.query;
+    if (_id)
+      worker = await Worker.findOne({ _id, end: end ? { $ne: null } : null });
+    else if (!passportinfo && !contact && !gender)
+      worker = await Worker.find({ end: end ? { $ne: null } : null });
+    else if (passportinfo)
       worker = await Worker.findOne({
-        $or: [{ passport_info: sha256(passportinfo) }, { gender }],
-        end: null,
+        passport_info: sha256(passportinfo),
+        end: end ? { $ne: null } : null,
+      });
+    else if (gender)
+      worker = await Worker.find({
+        gender,
+        end: end ? { $ne: null } : null,
       });
     else {
-      const { _id } = token ? jwt.verify(token, "WORKER") : { _id: null };
       worker = await Worker.findOne({
-        $or: [{ _id }, { contact }],
-        end: null,
+        contact,
+        end: end ? { $ne: null } : null,
       });
       if (!worker) throw new Error("worker not work ago");
     }
     res.json({
       status: 200,
       message: "Old worker!",
-      data:
-        token || passportinfo || contact
-          ? [worker, jwt.sign({ _id: worker._id }, "WORKER")]
-          : worker,
+      data: worker,
     });
   } catch (e) {
     res.json({
@@ -65,7 +67,7 @@ const POST = async (req, res, next) => {
     res.json({
       status: 200,
       message: "Add Worker!",
-      data: jwt.sign({ _id: worker._id }, "WORKER"),
+      data: worker,
     });
     return next();
   } catch (e) {
@@ -80,34 +82,36 @@ const POST = async (req, res, next) => {
 const PUT = async (req, res, next) => {
   try {
     let worker;
-    const { token, passportinfo, contact } = req.headers;
-    const { _id } = token ? jwt.verify(token, "WORKER") : { _id: null };
+    const { _id } = req.params;
     worker = await Worker.findOne({
-      $or: [{ _id }, { passport_info: sha256(passportinfo) }],
-      end: null,
+      _id,
     });
-    if (contact && !token && !passportinfo)
-      worker = await Worker.findOne({
-        contact,
-        end: null,
-      });
-
     if (!worker) throw new Error("worker not work ago");
 
-    let { firstName, lastName, gender, birthDate, passportInfo, workName } =
-      req.body;
+    let {
+      firstName,
+      lastName,
+      gender,
+      birthDate,
+      passportinfo,
+      workName,
+      begin,
+      end,
+    } = req.body;
     const fworker = await Worker.updateOne(
-      { _id: worker._id },
+      { _id },
       {
         $set: {
           first_name: firstName ? firstName : worker.first_name,
           last_name: lastName ? lastName : worker.last_name,
           gender: gender ? gender : worker.gender,
           birth_day: birthDate ? birthDate : worker.birth_day,
-          passport_info: passportInfo
-            ? sha256(passportInfo)
+          passport_info: passportinfo
+            ? sha256(passportinfo)
             : worker.passport_info,
           work_name: workName ? workName : worker.work_name,
+          begin: begin ? new Date(begin) : worker.begin,
+          end: end ? null : worker.end,
         },
         $currentDate: { lastModified: true },
       }
@@ -126,64 +130,17 @@ const PUT = async (req, res, next) => {
   }
 };
 
-const PUTR = async (req, res) => {
-  try {
-    let worker;
-    const { token } = req.headers;
-    const { _id } = token ? jwt.verify(token, "WORKER") : { _id: null };
-    const { passportinfo, contact, gender } = req.body;
-    if (!token && !passportinfo && !contact && !gender)
-      worker = await Worker.find({ end: { $ne: null } });
-    else if (passportinfo || gender)
-      worker = await Worker.findOne({
-        $or: [{ passport_info: sha256(passportinfo) }, { gender }],
-        end: null,
-      });
-    else {
-      worker = await Worker.findOne({
-        $or: [{ _id }, { contact }],
-      });
-      if (!worker) throw new Error("worker not work ago");
-    }
-    const worke = await Worker.updateOne(
-      { _id },
-      {
-        $set: { end: null, begin: new Date(Date.now()) },
-      }
-    );
-    if (!worke) throw new Error("worker already deleted");
-    res.json({
-      status: 200,
-      message: "Restore worker!",
-      data: [worke, jwt.sign({ _id: worker._id }, "WORKER")],
-    });
-  } catch (e) {
-    res.json({
-      status: 401,
-      message: e.message,
-    });
-  }
-};
-
 // +
 const DELETE = async (req, res) => {
   try {
-    const { token, passportinfo, contact } = req.headers;
-
-    const { _id } = token ? jwt.verify(token, "WORKER") : { _id: null };
+    const { _id } = req.params;
     let worker = await Worker.findOne({
-      $or: [{ _id }, { contact }],
+      _id,
       end: null,
     });
-    if (!contact && !token && passportinfo)
-      worker = await Worker.findOne({
-        passport_info: sha256(passportinfo),
-        end: null,
-      });
-
     if (!worker) throw new Error("worker not found");
     const worke = await Worker.updateOne(
-      { _id: worker._id },
+      { _id },
       {
         $set: { end: new Date(Date.now()) },
         $currentDate: { lastModified: true },
@@ -206,6 +163,5 @@ export default {
   GET,
   POST,
   PUT,
-  PUTR,
   DELETE,
 };

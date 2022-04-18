@@ -1,17 +1,18 @@
 import { Consumer } from "../models/index.js";
-import jwt from "jsonwebtoken";
 
 const GET = async (req, res) => {
   try {
     let consumer;
-    const { token } = req.headers;
-    const { passportInfo } = req.headers;
-
-    if (!token && !passportInfo && !contact) consumer = await Consumer.find();
-    else {
-      const { _id } = token ? jwt.verify(token, "CONSUMER") : { _id: null };
+    const { _id } = req.params;
+    const { passportInfo, contact, left } = req.query;
+    if (!_id && !passportInfo && !contact) {
+      consumer = await Consumer.find({
+        left_date: left ? { $ne: null } : null,
+      });
+    } else {
       consumer = await Consumer.findOne({
         $or: [{ _id }, { passport_info: passportInfo }, { contact }],
+        end: null,
       });
       if (!consumer) throw new Error("Consumer is not come ago");
     }
@@ -52,9 +53,8 @@ const POST = async (req, res, next) => {
     res.json({
       status: 200,
       message: "Add Consumer!",
-      data: jwt.sign({ token: consumer._id }, "CONSUMER"),
+      data: consumer,
     });
-    return next();
   } catch (e) {
     res.json({
       status: 404,
@@ -65,21 +65,24 @@ const POST = async (req, res, next) => {
 
 const PUT = async (req, res, next) => {
   try {
-    const { _id } = jwt.verify(req.headers.token, "CONSUMER");
-    const consumer = await Consumer.findOne({ _id });
-    if (!consumer) throw new Error("Consumer is not found");
+    let consumer;
+    const { _id } = req.params;
+    if (!_id) {
+      consumer = await Consumer.findOne({ _id });
+      if (!consumer) throw new Error("Consumer is not found");
+    }
     let { firstName, lastName, gender, roomNumber, passportInfo, roomType } =
       req.body;
     const fconsumer = await Consumer.updateOne(
       { _id },
       {
         $set: {
-          first_name: firstName ? firstName : fconsumer.first_name,
-          last_name: lastName ? lastName : fconsumer.last_name,
-          gender: gender ? gender : fconsumer.gender,
-          room_number: roomNumber ? roomNumber : fconsumer.room_number,
-          passport_info: passportInfo ? passportInfo : fconsumer.passport_info,
-          room_type: roomType ? roomType : fconsumer.room_type,
+          first_name: firstName ? firstName : consumer.first_name,
+          last_name: lastName ? lastName : consumer.last_name,
+          gender: gender ? gender : consumer.gender,
+          room_number: roomNumber ? roomNumber : consumer.room_number,
+          passport_info: passportInfo ? passportInfo : consumer.passport_info,
+          room_type: roomType ? roomType : consumer.room_type,
         },
         $currentDate: { lastModified: true },
       }
@@ -100,8 +103,8 @@ const PUT = async (req, res, next) => {
 
 const PUTR = async (req, res) => {
   try {
-    const { token, passportinfo, contact } = req.headers;
-    const { _id } = token ? jwt.verify(token, "CONSUMER") : { _id: null };
+    const { _id } = req.params;
+    const { passportinfo, contact } = req.query;
     const consumer = await Consumer.findOne({
       $or: [{ _id }, { passport_info: passportinfo }, { contact }],
     });
@@ -114,7 +117,7 @@ const PUTR = async (req, res) => {
     res.json({
       status: 200,
       message: "Restore Consumer!",
-      data: token ? consumere : jwt.sign({ token: consumer._id }, "CONSUMER"),
+      data: _id ? consumere : consumer._id,
     });
   } catch (e) {
     res.json({
@@ -126,14 +129,13 @@ const PUTR = async (req, res) => {
 
 const DELETE = async (req, res) => {
   try {
-    const { _id } = jwt.verify(req.headers.token, "CONSUMER");
-    const consumer = await Consumer.findOne({ _id });
+    const { _id } = req.params;
+    const consumer = await Consumer.findOne({ _id, left_date: null });
     if (!consumer) throw new Error("Consumer is not found");
     const worke = await Consumer.updateOne(
-      { _id, left_date: null },
+      { _id },
       { $set: { left_date: new Date(Date.now()) } }
     );
-    if (!worke) throw new Error("Consumer already lefted");
     res.json({
       status: 200,
       message: "Left consumer!",

@@ -1,10 +1,9 @@
 import { Room } from "../models/index.js";
-import test from "../check/check.js";
 
 const GET = async (req, res) => {
   try {
     let rooms;
-    const { roomNumber } = req.headers;
+    const { roomNumber } = req.params;
     if (!roomNumber) rooms = await Room.find();
     else {
       rooms = await Room.findOne({ room_number: roomNumber });
@@ -87,7 +86,7 @@ const PUT = async (req, res, next) => {
 };
 const DELETE = async (req, res) => {
   try {
-    const { roomNumber } = req.body;
+    const { roomNumber } = req.params;
     const room = await Room.deleteOne({ room_number: roomNumber });
     res.json({
       status: 200,

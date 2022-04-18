@@ -4,9 +4,10 @@ import test from "../check/check.js";
 
 const router = Router();
 
-router.get("/:id", Worker.GET);
+router.get("/:_id", Worker.GET);
+router.get("/", Worker.GET);
 router.post("/", test.Worker, Worker.POST);
-router.put("/:id", test.Worker, Worker.PUT);
-router.delete("/:id", Worker.DELETE);
+router.put("/:_id", test.Worker, Worker.PUT);
+router.delete("/:_id", Worker.DELETE);
 
 export default router;
