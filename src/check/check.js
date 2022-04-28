@@ -1,19 +1,29 @@
 import sha256 from "sha256";
 import jwt from "jsonwebtoken";
 
+// hotel777
 const login = async (req, res, next) => {
   try {
-    let { login, password } = req.body;
+    const { token } = req.headers;
+    let { login, password } = req.query;
+    if (token) {
+      login = jwt.verify(token, "hotel");
+      return res.json({
+        status: 200,
+        message: "welcome!",
+      });
+    }
+
     if (
       login != "grand" ||
       sha256(password) !=
-        "22e5b48f9290efb4c81270f9c0118e55141f8fdf33ab7f0869d1a0218feabbe8"
+        "7d44f32745a41003c76d478bc56b3a25b98d764dc01d61f395d66681daf142d0"
     )
-      throw new Error(" login or password wrong ");
+      throw new Error("login or password wrong ");
     res.json({
       status: 200,
       message: "welcome!",
-      data: jwt.sign({ token: key }, "wherehouse"),
+      data: jwt.sign({ token: login }, "hotel"),
     });
     next();
   } catch (e) {
@@ -61,7 +71,7 @@ const Worker = (req, res, next) => {
   }
 };
 
-const Consumer = (req, res, next) => {
+const Customer = (req, res, next) => {
   try {
     let { roomNumber, roomType } = req.body;
     testbody(req.body);
@@ -110,6 +120,6 @@ const Room = (req, res, next) => {
 export default {
   login,
   Worker,
-  Consumer,
+  Customer,
   Room,
 };

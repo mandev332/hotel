@@ -3,10 +3,12 @@ import { Room } from "../models/index.js";
 const GET = async (req, res) => {
   try {
     let rooms;
-    const { roomNumber } = req.params;
-    if (!roomNumber) rooms = await Room.find();
+    const { roomNumber, busy } = req.query;
+    if (!roomNumber && !busy) rooms = await Room.find();
     else {
-      rooms = await Room.findOne({ room_number: roomNumber });
+      rooms = await Room.find({
+        $or: [{ room_number: roomNumber }, { busy: +busy ? true : false }],
+      });
       if (!rooms) throw new Error("rooms not found");
     }
     res.json({
@@ -53,7 +55,10 @@ const POST = async (req, res, next) => {
 const PUT = async (req, res, next) => {
   try {
     const { roomNumber } = req.params;
-    const room = await Room.findOne({ room_number: roomNumber });
+    const room = await Room.findOne({
+      room_number: roomNumber,
+      busy: busy ? true : false,
+    });
     if (!room) throw new Error("room not found");
 
     const { roomType, bed, television, conditioner, other, price } = req.body;
@@ -87,7 +92,10 @@ const PUT = async (req, res, next) => {
 const DELETE = async (req, res) => {
   try {
     const { roomNumber } = req.params;
-    const room = await Room.deleteOne({ room_number: roomNumber });
+    const room = await Room.deleteOne({
+      room_number: roomNumber,
+      busy: true,
+    });
     res.json({
       status: 200,
       message: "Delete room!",

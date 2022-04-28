@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 const { Schema } = mongoose;
 
-const ConsumerSchema = new Schema({
+const CustomerSchema = new Schema({
   first_name: {
     type: String,
     required: true,
@@ -22,7 +22,6 @@ const ConsumerSchema = new Schema({
   room_number: {
     type: Number,
     required: true,
-    unique: true,
   },
   room_type: {
     type: Number,
@@ -39,8 +38,7 @@ const ConsumerSchema = new Schema({
   },
   left_date: {
     type: Date,
-    default: null,
   },
 });
-const Consumermodel = mongoose.model("consumers", ConsumerSchema);
-export default Consumermodel;
+const Customermodel = mongoose.model("customers", CustomerSchema);
+export default Customermodel;

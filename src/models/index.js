@@ -1,5 +1,5 @@
-import Consumer from "./consumerModel.js";
+import Customer from "./customerModel.js";
 import Worker from "./workerModel.js";
 import Room from "./roomModel.js";
 
-export { Consumer, Worker, Room };
+export { Customer, Worker, Room };

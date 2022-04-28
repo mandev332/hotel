@@ -7,25 +7,25 @@ const GET = async (req, res) => {
   try {
     let worker;
     const { _id } = req.params;
-    const { passportinfo, contact, gender, end } = req.query;
+    let { passportinfo, contact, name, end } = req.query;
     if (_id)
-      worker = await Worker.findOne({ _id, end: end ? { $ne: null } : null });
-    else if (!passportinfo && !contact && !gender)
-      worker = await Worker.find({ end: end ? { $ne: null } : null });
+      worker = await Worker.findOne({ _id, end: +end ? null : { $ne: null } });
+    else if (!passportinfo && !contact && !name)
+      worker = await Worker.find({ end: +end ? null : { $ne: null } });
     else if (passportinfo)
       worker = await Worker.findOne({
         passport_info: sha256(passportinfo),
-        end: end ? { $ne: null } : null,
+        end: end ? null : { $ne: null },
       });
-    else if (gender)
+    else if (name)
       worker = await Worker.find({
-        gender,
-        end: end ? { $ne: null } : null,
+        $or: [{ first_name: name }, { last_name: name }],
+        end: +end ? null : { $ne: null },
       });
     else {
       worker = await Worker.findOne({
         contact,
-        end: end ? { $ne: null } : null,
+        end: +end ? null : { $ne: null },
       });
       if (!worker) throw new Error("worker not work ago");
     }

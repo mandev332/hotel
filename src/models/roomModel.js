@@ -27,6 +27,10 @@ const RoomSchema = new Schema({
   price: {
     type: Number,
   },
+  busy: {
+    type: Boolean,
+    default: false,
+  },
 });
 const Roommodel = mongoose.model("rooms", RoomSchema);
 export default Roommodel;
