@@ -73,12 +73,9 @@ const Worker = (req, res, next) => {
 
 const Customer = (req, res, next) => {
   try {
-    let { roomNumber, roomType } = req.body;
+    let { roomNumber } = req.body;
     testbody(req.body);
-    if (roomNumber && ![1, 2].includes(roomNumber))
-      throw new Error("You send invalid room number!");
-    if (roomType && (roomType > 5 || roomType < 1))
-      throw new Error("You send invalid room type!");
+    if (!1 > roomNumber) throw new Error("You send invalid room number!");
     return next();
   } catch (er) {
     return res.json({

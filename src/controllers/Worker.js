@@ -6,8 +6,10 @@ import "./mongo.js";
 const GET = async (req, res) => {
   try {
     let worker;
+
     const { _id } = req.params;
-    let { passportinfo, contact, name, end } = req.query;
+    let { passportinfo, contact, name, end, page, limit } = req.query;
+
     if (_id)
       worker = await Worker.findOne({ _id, end: +end ? null : { $ne: null } });
     else if (!passportinfo && !contact && !name)
@@ -29,10 +31,15 @@ const GET = async (req, res) => {
       });
       if (!worker) throw new Error("worker not work ago");
     }
+
     res.json({
       status: 200,
       message: "Old worker!",
-      data: worker,
+      pagin:
+        worker.length % limit
+          ? parseInt(worker.length / limit) + 1
+          : worker.length / limit,
+      data: worker.slice((page - 1) * limit, limit * page),
     });
   } catch (e) {
     res.json({

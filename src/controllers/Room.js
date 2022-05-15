@@ -3,18 +3,23 @@ import { Room } from "../models/index.js";
 const GET = async (req, res) => {
   try {
     let rooms;
-    const { roomNumber, busy } = req.query;
-    if (!roomNumber && !busy) rooms = await Room.find();
+    let { roomNumber, busy, page, limit } = req.query;
+    if (!roomNumber) rooms = await Room.find({ busy: +busy ? true : false });
     else {
       rooms = await Room.find({
-        $or: [{ room_number: roomNumber }, { busy: +busy ? true : false }],
+        room_number: roomNumber,
+        busy: +busy ? true : false,
       });
       if (!rooms) throw new Error("rooms not found");
     }
     res.json({
       status: 200,
       message: "Rooms!",
-      data: rooms,
+      pagin:
+        rooms.length % limit
+          ? parseInt(rooms.length / limit) + 1
+          : rooms.length / limit,
+      data: rooms.slice((page - 1) * limit, limit * page),
     });
   } catch (e) {
     res.json({
@@ -32,8 +37,8 @@ const POST = async (req, res, next) => {
       room_number: roomNumber,
       room_type: roomType,
       bed,
-      television,
-      conditioner,
+      television: television ? true : false,
+      conditioner: conditioner ? true : false,
       other,
       price,
     });
@@ -91,11 +96,12 @@ const PUT = async (req, res, next) => {
 };
 const DELETE = async (req, res) => {
   try {
-    const { roomNumber } = req.params;
+    const { _id } = req.params;
     const room = await Room.deleteOne({
-      room_number: roomNumber,
-      busy: true,
+      _id,
     });
+    let k = await Room.findOne({ _id });
+    console.log(k);
     res.json({
       status: 200,
       message: "Delete room!",

@@ -5,7 +5,7 @@ const GET = async (req, res) => {
   try {
     let customer;
     const { _id } = req.params;
-    const { name, passportInfo, contact, left } = req.query;
+    const { name, passportInfo, contact, left, page, limit } = req.query;
     if (!_id && !passportInfo && !contact && !name) {
       customer = await Customer.find({
         left_date: +left ? null : { $ne: null },
@@ -26,7 +26,11 @@ const GET = async (req, res) => {
     res.json({
       status: 200,
       message: "Customer!",
-      data: customer,
+      pagin:
+        customer.length % limit
+          ? customer.length / limit + 1
+          : customer.length / limit,
+      data: customer.slice((page - 1) * limit, limit * page),
     });
   } catch (e) {
     res.json({
@@ -41,7 +45,7 @@ const POST = async (req, res, next) => {
     let {
       firstName,
       lastName,
-      passportInfo,
+      passportinfo,
       gender,
       roomNumber,
       contact,
@@ -52,7 +56,7 @@ const POST = async (req, res, next) => {
       last_name: lastName,
       gender,
       room_number: roomNumber,
-      passport_info: passportInfo,
+      passport_info: passportinfo,
       contact,
       left_date: leftDate ? new Date(leftDate) : null,
     });
@@ -124,7 +128,7 @@ const DELETE = async (req, res) => {
     const { _id } = req.params;
     const customer = await Customer.findOne({ _id, left_date: null });
     if (!customer) throw new Error("Customer is not found");
-    const worke = await Customer.findByIdAndUpdate(
+    const custom = await Customer.findByIdAndUpdate(
       _id,
       { $set: { left_date: new Date(Date.now()) } },
       { new: true }
@@ -132,7 +136,7 @@ const DELETE = async (req, res) => {
     res.json({
       status: 200,
       message: "Left customer!",
-      data: worke,
+      data: custom,
     });
   } catch (e) {
     res.json({
